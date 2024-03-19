@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 
 # MAC Adress of DFT200 (find out using bluetoothctl)
