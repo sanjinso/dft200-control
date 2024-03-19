@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # MAC Adress of DFT200 (find out using bluetoothctl)
-DFT200MAC="CA:96:42:01:D5:A3"
+DFT200MAC="CA:0a:95:CD:68:16"
 
 # Path to dft200-go
 DFT200APP="$HOME/go/bin/dft-cli"
