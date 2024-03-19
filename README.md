@@ -1,15 +1,15 @@
 # dft200-control
-Just a simple Bash script I wrote for controlling an DFT200 by Sportstech via CLI or keyboard using [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk). You can do this using dft200-go on its own and without this script as described there but this gives you notifications about the state of the treadmill and makes it possible to increase or decrease the speed incremantally by reapeatedly pressing a button.
+Just a simple Bash script I wrote for controlling an DFT200 by Sportstech via CLI or keyboard using [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk). 
 
-I use it with Hyprland and Mako Notifications on Arch Linux. 
+You could do this using dft200-go on its own and without this script but this gives you notifications about the state of the treadmill and makes it possible to increase or decrease the speed incremantally by reapeatedly pressing a button.
+
+*I use it with Hyprland and Mako Notifications on Arch Linux. *
 
 ## Warning 
-**Use at your own risk! 
+**Use at your own risk!** 
 - Always have the original remote control nearby. 
 - Emergency stop is NOT implemented.
 - Bluetooth control is unauthenticated. Anyone in range can control your treadmill.
-**
-
 
 ## Setup
 1. Install dft200-go: ```go install github.com/leoluk/dft200-go/cmd/dft-cli```
@@ -37,14 +37,16 @@ You have to change the MAC adress inside the script to the MAC adress of YOUR DF
 #### Hyprland
 For keyboard controls I used ```wev``` to find out the keycodes for F14 to F16 and created keybindings in my Hyprland config:
 
-```#Sportstech DFT200 Treadmill Control
+```
+#Sportstech DFT200 Treadmill Control
 
 $treadmill = path/to/your/script/dft200control
 #F16=Start/Pause, F15=Speed+, F14=Speed-
 #Use wev to checkout keycodes
 bind = , code:194, exec, $treadmill --toggle
 bind = , code:193, exec, $treadmill --inc
-bind = , code:192, exec, $treadmill --dec```
+bind = , code:192, exec, $treadmill --dec
+```
 
 #### i3
 ```
