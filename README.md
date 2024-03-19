@@ -6,7 +6,7 @@ You could do this using dft200-go on its own and without this script but this gi
 *I use it with Hyprland and Mako Notifications on Arch Linux. *
 
 ## Warning 
-**Use at your own risk!** 
+*Use at your own risk!* 
 - Always have the original remote control nearby. 
 - Emergency stop is NOT implemented.
 - Bluetooth control is unauthenticated. Anyone in range can control your treadmill.
@@ -38,11 +38,9 @@ You have to change the MAC adress inside the script to the MAC adress of YOUR DF
 For keyboard controls I used ```wev``` to find out the keycodes for F14 to F16 and created keybindings in my Hyprland config:
 
 ```
-#Sportstech DFT200 Treadmill Control
-
 $treadmill = path/to/your/script/dft200control
 #F16=Start/Pause, F15=Speed+, F14=Speed-
-#Use wev to checkout keycodes
+#Use wev to identify keycodes
 bind = , code:194, exec, $treadmill --toggle
 bind = , code:193, exec, $treadmill --inc
 bind = , code:192, exec, $treadmill --dec
