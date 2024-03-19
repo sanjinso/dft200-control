@@ -8,11 +8,12 @@ I use it on Hyprland with Mako Notifications on Arch Linux.
 
 ## Usage
 1. ```go install github.com/leoluk/dft200-go/cmd/dft-cli```
-2. ```cd /usr/local/bin && git clone https://github.com/sanjinso/dft200-control.git```
-3. Set MAC Adress of your DFT200 treadmill inside the script. (find out using bluetoothctl)
-4. Set filepath to dft200-go inside the script. Default is ```$HOME/go/bin/dft-cli```
-5. Optional: Change path to icons for notifications inside the script.
-6. Run ```dft200control --toggle```
+2. ```git clone https://github.com/sanjinso/dft200-control.git ~/.local/bin/dft200-control```
+3. chmod +x ~/.local/bin/dft200-control/dft200-control
+4. Set MAC Adress of your DFT200 treadmill inside the script. (find out using bluetoothctl)
+5. Set filepath to dft200-go inside the script. Default is ```$HOME/go/bin/dft-cli```
+6. Optional: Change path to icons for notifications inside the script.
+7. Run ```dft200control --toggle```
 
 ### Commands
 ```dft200control --toggle``` | On/Off
