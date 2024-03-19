@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+
+# MAC Adress of DFT200 (find out using bluetoothctl)
+DFT200MAC="CA:96:42:01:D5:A3"
+
+# Path to dft200-go
+DFT200APP="$HOME/go/bin/dft-cli"
+
+# Path to icons for notifications
+iDIR="$(dirname "${BASH_SOURCE[0]}")"
+# iDIR="$HOME/.config/hypr/mako/icon/treadmill"
+
+# Path for file saving state of treadmill 
+DFT200TMP="/tmp/dft200"
+
+read_speed_and_state() {
+	echo "Read Speed and State (/tmp/dft200)"
+	if [ -f $DFT200TMP ]; then
+    echo "File exists"
+		CURRENT_SPEED=$(sed -n '1p' $DFT200TMP) 
+    CURRENT_STATE=$(sed -n '2p' $DFT200TMP) 
+		echo "Speed: $CURRENT_SPEED, State: $CURRENT_STATE"
+
+		if [ -z "$CURRENT_SPEED" ]; then
+			CURRENT_SPEED=0
+		fi
+
+		if [ -z "$CURRENT_STATE" ]; then
+			CURRENT_STATE="OFF"
+		fi
+
+		save_speed_and_state
+	else
+		echo "File does not exist, setting defaults."
+    CURRENT_SPEED=0
+    CURRENT_STATE="OFF"
+		save_speed_and_state
+	fi
+	
+}
+
+save_speed_and_state() {
+	echo $CURRENT_SPEED > $DFT200TMP
+	echo $CURRENT_STATE >> $DFT200TMP
+}
+
+toggle() {
+	read_speed_and_state
+
+	if [ "$CURRENT_STATE" = "ON" ]; then
+		$DFT200APP -addr $DFT200MAC -pause
+		CURRENT_STATE=OFF
+	else
+		$DFT200APP -addr $DFT200MAC -start
+		CURRENT_STATE=ON
+	fi
+	
+	save_speed_and_state
+	get_icon_state && notify_user_state
+}
+
+inc_speed() {
+	read_speed_and_state
+  CURRENT_SPEED=$((CURRENT_SPEED + 10))
+	$DFT200APP -addr $DFT200MAC -speed $CURRENT_SPEED	
+	save_speed_and_state
+	get_icon_speed && notify_user_speed
+}
+
+dec_speed() {
+	read_speed_and_state
+  CURRENT_SPEED=$((CURRENT_SPEED - 10))
+	$DFT200APP -addr $DFT200MAC -speed $CURRENT_SPEED	
+	save_speed_and_state
+	get_icon_speed && notify_user_speed 
+}
+
+get_speed() {
+	read_speed_and_state
+	echo $CURRENT_SPEED
+}
+
+get_icon_speed() {
+	if   [ "$CURRENT_SPEED" -le "20" ]; then
+		icon="$iDIR/dft200-20.png"
+	elif [ "$CURRENT_SPEED" -le "30" ]; then
+		icon="$iDIR/dft200-40.png"
+	elif [ "$CURRENT_SPEED" -le "40" ]; then
+		icon="$iDIR/dft200-60.png"
+	elif [ "$CURRENT_SPEED" -le "50" ]; then
+		icon="$iDIR/dft200-80.png"
+	else
+		icon="$iDIR/dft200-100.png"
+	 fi
+}
+
+get_icon_state() {
+	if   [ "$CURRENT_STATE" = "ON" ]; then
+		icon="$iDIR/dft200-on.png"
+	else
+		icon="$iDIR/dft200-off.png"
+	 fi
+}
+
+notify_user_speed() {
+	read_speed_and_state
+	notify-send -h string:x-canonical-private-synchronous:sys-notify -u low -i "$icon" "Speed Level: $((CURRENT_SPEED / 10))"
+}
+
+notify_user_state() {
+	read_speed_and_state
+	notify-send -h string:x-canonical-private-synchronous:sys-notify -u low -i "$icon" "Powered: $CURRENT_STATE"
+}
+
+case "$1" in
+	"--get")
+		get_speed
+		;;
+	"--inc")
+		inc_speed
+		;;
+	"--dec")
+		dec_speed
+		;;
+	"--toggle")
+		toggle
+		;;
+	*)
+	  echo "No valid speed argument provided"
+		get_speed
+		;;
+esac
