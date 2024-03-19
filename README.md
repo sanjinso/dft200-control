@@ -1,7 +1,7 @@
 # dft200-control
 Just a simple Bash script I wrote for controlling an DFT200 by Sportstech via CLI or keyboard using [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk). 
 
-You could do this using dft200-go on its own and without this script but this gives you notifications about the state of the treadmill and makes it possible to increase or decrease the speed incremantally by reapeatedly pressing a button.
+You could do this using dft200-go on its own and without this script but this gives you notifications about the state of the treadmill and makes it possible to increase or decrease the speed incremantally by repeatedly pressing a button.
 
 *I use it with Hyprland and Mako Notifications on Arch Linux.*
 
