@@ -3,10 +3,10 @@ Just a simple Bash script I wrote for controlling an DFT200 by Sportstech via CL
 
 You could do this using dft200-go on its own and without this script but this gives you notifications about the state of the treadmill and makes it possible to increase or decrease the speed incremantally by reapeatedly pressing a button.
 
-*I use it with Hyprland and Mako Notifications on Arch Linux. *
+*I use it with Hyprland and Mako Notifications on Arch Linux.*
 
 ## Warning 
-*Use at your own risk!* 
+**Use at your own risk!**
 - Always have the original remote control nearby. 
 - Emergency stop is NOT implemented.
 - Bluetooth control is unauthenticated. Anyone in range can control your treadmill.
