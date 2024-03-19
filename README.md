@@ -7,12 +7,12 @@ I use it on Hyprland with Mako Notifications on Arch Linux.
 **Use at your own risk! Always have the original remote control nearby. Emergency stop is NOT implemented.**
 
 ## Usage
-1. ```go install github.com/leoluk/dft200-go/cmd/dft-cli```
-2. ```git clone https://github.com/sanjinso/dft200-control.git ~/.local/bin/dft200-control```
-3. chmod +x ~/.local/bin/dft200-control/dft200-control
+1. Install dft200-go ```go install github.com/leoluk/dft200-go/cmd/dft-cli```
+2. Clone this repo ```git clone https://github.com/sanjinso/dft200-control.git ~/.local/bin/dft200-control```
+3. Make it executable ```chmod +x ~/.local/bin/dft200-control/dft200-control```
 4. Set MAC Adress of your DFT200 treadmill inside the script. (find out using bluetoothctl)
-5. Set filepath to dft200-go inside the script. Default is ```$HOME/go/bin/dft-cli```
-6. Optional: Change path to icons for notifications inside the script.
+5. **Optional**: Set filepath to dft200-go inside the script. Default is ```$HOME/go/bin/dft-cli```
+6. **Optional**: Change path to icons for notifications inside the script.
 7. Run ```dft200control --toggle```
 
 ### Commands
