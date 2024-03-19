@@ -23,6 +23,21 @@ I use it on Hyprland with Mako Notifications on Arch Linux.
 | ```dft200control --dec``` | Decrease speed |
 | ```dft200control --get``` | Return current speed |
 
+### Configuration
+You have to change the MAC adress inside the script to the Mac adress of YOUR DFT200. I ran into an compatibily issue with my Bluetooth dongle using dft200-go so I slightly modified it. https://github.com/sanjinso/dft200-go 
+
+For keyboard controls I used ```wev``` to find out the keycodes for F14 to F16 and created keybindings in my Hyprland config:
+
+```#Sportstech DFT200 Treadmill Control
+
+$treadmill = path/to/your/script/dft200control
+#F16=Start/Pause, F15=Speed+, F14=Speed-
+#Use wev to checkout keycodes
+bind = , code:194, exec, $treadmill --toggle
+bind = , code:193, exec, $treadmill --inc
+bind = , code:192, exec, $treadmill --dec```
+  
+
 ## Requirements
 -  Bluetooth Connection to DFT200
 -  [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk)
