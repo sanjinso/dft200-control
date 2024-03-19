@@ -7,7 +7,7 @@ DFT200MAC="CA:0a:95:CD:68:16"
 DFT200APP="$HOME/go/bin/dft-cli"
 
 # Path to icons for notifications
-iDIR="$(dirname "${BASH_SOURCE[0]}")"
+iDIR="$(dirname "${BASH_SOURCE[0]}")/icons"
 # iDIR="$HOME/.config/hypr/mako/icon/treadmill"
 
 # Path for file saving state of treadmill 
