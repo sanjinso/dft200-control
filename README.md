@@ -3,7 +3,7 @@ Just a simple Bash script I wrote for controlling an DFT200 by Sportstech via CL
 
 I use it on Hyprland with Mako Notifications on Arch Linux. 
 
-# Warning 
+## Warning 
 **Use at your own risk! Always have the original remote control nearby. Emergency stop is NOT implemented.**
 
 ## Usage
@@ -16,10 +16,12 @@ I use it on Hyprland with Mako Notifications on Arch Linux.
 7. Run ```dft200control --toggle```
 
 ### Commands
-```dft200control --toggle``` | On/Off
-```dft200control --inc``` | Increase speed
-```dft200control --dec``` | Decrease speed
-```dft200control --get``` | Return current speed
+| Command | Description |
+|-------------------------------|--------------------------|
+| ```dft200control --toggle``` | On/Off |
+| ```dft200control --inc``` | Increase speed |
+| ```dft200control --dec``` | Decrease speed |
+| ```dft200control --get``` | Return current speed |
 
 ## Requirements
 -  Bluetooth Connection to DFT200
