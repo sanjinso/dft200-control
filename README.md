@@ -10,6 +10,7 @@ You could do this using dft200-go on its own and without this script but this gi
 - Always have the original remote control nearby. 
 - Emergency stop is NOT implemented.
 - Bluetooth control is unauthenticated. Anyone in range can control your treadmill.
+- Be careful when using speed increase or speed decrease after shutting it off on a higher speedlevel, it might ramp up back to that level even if you intend to low it down!
 
 ## Setup
 1. Install dft200-go: ```go install github.com/leoluk/dft200-go/cmd/dft-cli```
