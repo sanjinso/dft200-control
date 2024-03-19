@@ -4,7 +4,7 @@ Just a simple Bash script I wrote for controlling an DFT200 by Sportstech via CL
 I use it on Hyprland with Mako Notifications on Arch Linux. 
 
 # Warning 
-Use at your own risk! Always have the original remote control nearby. Emergency stop is NOT implemented.
+**Use at your own risk! Always have the original remote control nearby. Emergency stop is NOT implemented.**
 
 ## Usage
 1. ```go install github.com/leoluk/dft200-go/cmd/dft-cli```
