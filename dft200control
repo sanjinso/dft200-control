@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 
 # MAC Adress of DFT200 (find out using bluetoothctl)
@@ -8,7 +9,7 @@ DFT200APP="$HOME/go/bin/dft-cli"
 
 # Path to icons for notifications
 iDIR="$(dirname "${BASH_SOURCE[0]}")/icons"
-# iDIR="$HOME/.config/hypr/mako/icon/treadmill"
+#iDIR="$HOME/.config/hypr/mako/icons/treadmill"
 
 # Path for file saving state of treadmill 
 DFT200TMP="/tmp/dft200"
@@ -16,27 +17,23 @@ DFT200TMP="/tmp/dft200"
 read_speed_and_state() {
 	echo "Read Speed and State (/tmp/dft200)"
 	if [ -f $DFT200TMP ]; then
-    echo "File exists"
+		echo "File exists"
 		CURRENT_SPEED=$(sed -n '1p' $DFT200TMP) 
-    CURRENT_STATE=$(sed -n '2p' $DFT200TMP) 
+		CURRENT_STATE=$(sed -n '2p' $DFT200TMP) 
 		echo "Speed: $CURRENT_SPEED, State: $CURRENT_STATE"
-
 		if [ -z "$CURRENT_SPEED" ]; then
 			CURRENT_SPEED=0
 		fi
-
 		if [ -z "$CURRENT_STATE" ]; then
 			CURRENT_STATE="OFF"
 		fi
-
 		save_speed_and_state
 	else
 		echo "File does not exist, setting defaults."
-    CURRENT_SPEED=0
-    CURRENT_STATE="OFF"
+		CURRENT_SPEED=0
+		CURRENT_STATE="OFF"
 		save_speed_and_state
 	fi
-	
 }
 
 save_speed_and_state() {
@@ -46,7 +43,6 @@ save_speed_and_state() {
 
 toggle() {
 	read_speed_and_state
-
 	if [ "$CURRENT_STATE" = "ON" ]; then
 		$DFT200APP -addr $DFT200MAC -pause
 		CURRENT_STATE=OFF
@@ -54,14 +50,13 @@ toggle() {
 		$DFT200APP -addr $DFT200MAC -start
 		CURRENT_STATE=ON
 	fi
-	
 	save_speed_and_state
 	get_icon_state && notify_user_state
 }
 
 inc_speed() {
 	read_speed_and_state
-  CURRENT_SPEED=$((CURRENT_SPEED + 10))
+	CURRENT_SPEED=$((CURRENT_SPEED + 10))
 	$DFT200APP -addr $DFT200MAC -speed $CURRENT_SPEED	
 	save_speed_and_state
 	get_icon_speed && notify_user_speed
@@ -69,7 +64,7 @@ inc_speed() {
 
 dec_speed() {
 	read_speed_and_state
-  CURRENT_SPEED=$((CURRENT_SPEED - 10))
+	CURRENT_SPEED=$((CURRENT_SPEED - 10))
 	$DFT200APP -addr $DFT200MAC -speed $CURRENT_SPEED	
 	save_speed_and_state
 	get_icon_speed && notify_user_speed 
@@ -91,7 +86,7 @@ get_icon_speed() {
 		icon="$iDIR/dft200-80.png"
 	else
 		icon="$iDIR/dft200-100.png"
-	 fi
+	fi
 }
 
 get_icon_state() {
