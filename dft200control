@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# MAC Adress of DFT200 (find out using bluetoothctl)
-DFT200MAC="CA:0a:95:CD:68:16"
-
 # Path to dft200-go
 DFT200APP="${DFT200_APP_PATH:-$HOME/go/bin/dft-cli}"
 
@@ -108,7 +105,6 @@ update_setting() {
         echo -e "${key}=${value}" >> $DFT200CFG
     fi
 }
-
 
 toggle() {
 	load_settings

@@ -75,7 +75,7 @@ bindsym $mod+Ctrl+3 exec $tmCTL --dec
 
 ## Changelog
 
-20.03.2024
+20.03.2024 - v0.9
 - Added configuration file
 - Added info, error and warning messages
 - Added setup wizard for setting MAC Adress
