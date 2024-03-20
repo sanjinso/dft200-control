@@ -4,7 +4,7 @@
 DFT200MAC="CA:0a:95:CD:68:16"
 
 # Path to dft200-go
-DFT200APP="$HOME/go/bin/dft-cli"
+DFT200APP="${DFT200_APP_PATH:-$HOME/go/bin/dft-cli}"
 
 # Path to icons for notifications
 iDIR="$(dirname "${BASH_SOURCE[0]}")/icons"
@@ -12,65 +12,150 @@ iDIR="$(dirname "${BASH_SOURCE[0]}")/icons"
 
 # Path for file saving state of treadmill 
 DFT200TMP="/tmp/dft200"
+DFT200CFG="${DFT200_CONFIG_PATH:-$HOME/.config/dft200/dft200_settings.env}"
 
-read_speed_and_state() {
-	echo "Read Speed and State (/tmp/dft200)"
-	if [ -f $DFT200TMP ]; then
-		echo "File exists"
-		CURRENT_SPEED=$(sed -n '1p' $DFT200TMP) 
-		CURRENT_STATE=$(sed -n '2p' $DFT200TMP) 
-		echo "Speed: $CURRENT_SPEED, State: $CURRENT_STATE"
-		if [ -z "$CURRENT_SPEED" ]; then
-			CURRENT_SPEED=0
-		fi
-		if [ -z "$CURRENT_STATE" ]; then
-			CURRENT_STATE="OFF"
-		fi
-		save_speed_and_state
+#!/bin/bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+SLEEP_TIMEOUT=270
+
+initialize() {
+		echo "Initialization started..."
+    # Check if bluetoothctl is available
+    if command -v bluetoothctl >/dev/null 2>&1; then
+        echo "bluetoothctl found. Searching for Bluetooth devices..."
+        echo "Please wait..."
+        # List devices with bluetoothctl
+        mapfile -t devices < <(bluetoothctl devices | awk -F ' ' '{print NR " - " $0}')
+        for device in "${devices[@]}"; do
+            echo "$device"
+        done
+        echo "Please select a device by entering the corresponding number, or enter a MAC address directly:"
+        read -r selection
+        # Check if selection is a number (device selection)
+				if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -le "${#devices[@]}" ]; then
+            selected_device=$(echo "${devices[$selection-1]}" | awk '{print $4}')
+        else
+            # User entered a MAC address directly
+            selected_device="$selection"
+        fi
+        echo "Selected device MAC: $selected_device"
+        # Save the selected MAC to the config file
+        echo "DFT200MAC=$selected_device" >> "$HOME/.config/dft200/dft200_settings.env"
+    else
+        echo "bluetoothctl not found. Please enter your device's MAC address:"
+        read -r mac_address
+        echo "DFT200MAC=$mac_address" >> "$HOME/.config/dft200/dft200_settings.env"
+    fi
+    echo -e "${GREEN}Initialization completed.${NC}"
+		echo -e "${BLUE}Try dft200control --toggle${NC}"
+		exit 0
+}
+
+
+if [ -f $DFT200CFG ]; then
+		echo -e "${GREEN}Config loaded.${NC}"
 	else
-		echo "File does not exist, setting defaults."
-		CURRENT_SPEED=0
-		CURRENT_STATE="OFF"
-		save_speed_and_state
-	fi
+		echo -e "${YELLOW}Config does not exist.${NC}"
+		mkdir -p "$HOME/.config/dft200/" && touch "$HOME/.config/dft200/dft200_settings.env"
+		echo "CURRENT_STATE=OFF" > "$HOME/.config/dft200/dft200_settings.env"
+		echo "CURRENT_SPEED=0" >> "$HOME/.config/dft200/dft200_settings.env"
+		echo "LAST_PAUSED_TIMESTAMP=0" >> "$HOME/.config/dft200/dft200_settings.env"
+		echo "SLEEP_TIMEOUT=270" >> "$HOME/.config/dft200/dft200_settings.env"
+		echo -e "${GREEN}Config created in ~/.config/dft200/${NC}"
+		echo "Starting initialization..."
+		initialize
+fi
+
+load_settings() {
+    while IFS='=' read -r key value; do
+        case "$key" in
+            CURRENT_SPEED) CURRENT_SPEED="$value" ;;
+            CURRENT_STATE) CURRENT_STATE="$value" ;;
+            DFT200MAC) DFT200MAC="$value" ;;
+            LAST_PAUSED_TIMESTAMP) LAST_PAUSED_TIMESTAMP="$value" ;;
+			  esac
+    done < $DFT200CFG
 }
 
-save_speed_and_state() {
-	echo $CURRENT_SPEED > $DFT200TMP
-	echo $CURRENT_STATE >> $DFT200TMP
+load_setting() {
+    local setting_name="$1"
+    local setting_value
+    
+    # Attempt to read the setting's value from the file
+    setting_value=$(grep "^${setting_name}=" "$HOME/.config/dft200/dft200_settings.env" | cut -d '=' -f2-)
+
+    # Check if the setting was found and update the corresponding variable
+    if [ -n "$setting_value" ]; then
+        eval "$setting_name='$setting_value'"
+    else
+        echo -e "${YELLOW}Warning: Setting '$setting_name' not found.${NC}"
+    fi
 }
+
+update_setting() {
+    local key="$1"
+    local value="$2"
+    # Replace the value for the given key or add it if it doesn't exist
+    if grep -q "^${key}=" $DFT200CFG; then
+        sed -i "s/^${key}=.*/${key}=${value}/" $DFT200CFG
+    else
+        echo -e "${key}=${value}" >> $DFT200CFG
+    fi
+}
+
 
 toggle() {
-	read_speed_and_state
+	load_settings
+	current_time=$(date +%s)
 	if [ "$CURRENT_STATE" = "ON" ]; then
-		$DFT200APP -addr $DFT200MAC -pause
+	  if ! $DFT200APP -addr "$DFT200MAC" -pause; then
+    	echo -e "${RED}Error: Failed to pause the treadmill.${NC}"
+			return 1
+    fi
 		CURRENT_STATE=OFF
+		update_setting CURRENT_STATE "$CURRENT_STATE"
+		update_setting LAST_PAUSED_TIMESTAMP "$current_time"
 	else
-		$DFT200APP -addr $DFT200MAC -start
-		CURRENT_STATE=ON
+		time_diff=$((current_time - LAST_PAUSED_TIMESTAMP))
+		if [ "$time_diff" -ge "$SLEEP_TIMEOUT" ]; then
+			echo -e "${BLUE}Resetting treadmill speed to level 1 due to inactivity${NC}"
+			update_setting CURRENT_SPEED "10" 
+		fi
+		if ! $DFT200APP -addr "$DFT200MAC" -start; then
+		  echo -e "${RED}Error: Failed to start the treadmill.${NC}"
+		  return 1
+		fi
+		CURRENT_STATE=ON 
 	fi
-	save_speed_and_state
+	update_setting CURRENT_STATE "$CURRENT_STATE"
 	get_icon_state && notify_user_state
 }
 
 inc_speed() {
-	read_speed_and_state
+	load_settings
 	CURRENT_SPEED=$((CURRENT_SPEED + 10))
+	echo "Current Speed: $CURRENT_SPEED at $DFT200MAC"
 	$DFT200APP -addr $DFT200MAC -speed $CURRENT_SPEED	
-	save_speed_and_state
+	update_setting CURRENT_SPEED "$CURRENT_SPEED"
 	get_icon_speed && notify_user_speed
 }
 
 dec_speed() {
-	read_speed_and_state
+	load_settings
 	CURRENT_SPEED=$((CURRENT_SPEED - 10))
 	$DFT200APP -addr $DFT200MAC -speed $CURRENT_SPEED	
-	save_speed_and_state
+	update_setting CURRENT_SPEED "$CURRENT_SPEED"
 	get_icon_speed && notify_user_speed 
 }
 
 get_speed() {
-	read_speed_and_state
+  load_setting CURRENT_SPEED
 	echo $CURRENT_SPEED
 }
 
@@ -97,16 +182,19 @@ get_icon_state() {
 }
 
 notify_user_speed() {
-	read_speed_and_state
+	load_setting CURRENT_SPEED
 	notify-send -h string:x-canonical-private-synchronous:sys-notify -u low -i "$icon" "Speed Level: $((CURRENT_SPEED / 10))"
 }
 
 notify_user_state() {
-	read_speed_and_state
+	load_setting CURRENT_STATE
 	notify-send -h string:x-canonical-private-synchronous:sys-notify -u low -i "$icon" "Powered: $CURRENT_STATE"
 }
 
 case "$1" in
+	"--init")
+		initialize
+		;;
 	"--get")
 		get_speed
 		;;
@@ -119,8 +207,14 @@ case "$1" in
 	"--toggle")
 		toggle
 		;;
+	"--help")
+		echo "Use 'dft200control' --argument"
+		echo "--init | Setup configuration"
+		echo "--toggle | Toggle treadmill On/Off"
+		echo "--inc | Increase speed"
+		echo "--dec | Decrease speed"
+		;;
 	*)
-	  echo "No valid speed argument provided"
-		get_speed
+	  echo -e "${YELLOW}No valid argument provided. Run 'dft200control --init' if its your first time or try --help${NC}"
 		;;
 esac

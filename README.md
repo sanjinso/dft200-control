@@ -14,24 +14,23 @@ You could do this using dft200-go on its own and without this script but this gi
 
 ## Setup
 1. Install dft200-go: ```go install github.com/leoluk/dft200-go/cmd/dft-cli```
-2. Clone this repo: ```git clone https://github.com/sanjinso/dft200-control.git ~/.local/bin/dft200-control```
-3. Make it executable:; ```chmod +x ~/.local/bin/dft200-control/dft200-control```
-4. Set MAC Adress of your DFT200 treadmill inside the script. (find out using bluetoothctl)
-5. **Optional**: Set filepath to dft200-go inside the script. Default is: ```$HOME/go/bin/dft-cli```
-6. **Optional**: Change path to icons for notifications inside the script. Default is same dir as script
-7. Make sure yor dft200 is connectd via Bluetooth. Checkout [dft200-go/readme.md](https://github.com/leoluk/dft200-go)
-8. Run ```dft200control --toggle```
+2. Clone this repo: ```git clone https://github.com/sanjinso/dft200-control.git ~/.local/bin/dft200control```
+3. Make it executable: ```chmod +x ~/.local/bin/dft200control/dft200control```
+4. **Optional**: Set filepath to dft200-go via ```export DFT200_APP_PATH```. Default is: ```$HOME/go/bin/dft-cli```
+5. Make sure your Bluetooth works. Checkout [dft200-go/readme.md](https://github.com/leoluk/dft200-go)
+6. Run ```dft200control```
 
 ## Usage
 | Command | Description |
 |-------------------------------|--------------------------|
+| ```dft200control --init``` | Setup |
 | ```dft200control --toggle``` | On/Off |
 | ```dft200control --inc``` | Increase speed |
 | ```dft200control --dec``` | Decrease speed |
 | ```dft200control --get``` | Return current speed |
+| ```dft200control --help```| Lists cmds |
 
 ## Configuration
-You have to change the MAC adress inside the script to the MAC adress of YOUR DFT200. I ran into an compatibily issue with my Bluetooth dongle while using dft200-go so I slightly modified it. https://github.com/sanjinso/dft200-go
 
 ### Keyboard Controls
 
@@ -56,8 +55,34 @@ bindsym $mod+Ctrl+2 exec $tmCTL --inc
 bindsym $mod+Ctrl+3 exec $tmCTL --dec
 ```
 
+## Speed Level
+
+| Level | Speed (KM/H) |
+|-------|--------------|
+| 1 | 0.7 |
+| 2 | 1.5 |
+| 3 | 2.4 |
+| 4 | 3.3 |
+| 5 | 4.3 |
+| 6 | 5.2 |
+| 7 | 6.1 |
+| 8 | 7.1 |
+
 ## Requirements
 -  Bluetooth Connection to DFT200
 -  [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk)
 
+
+## Changelog
+
+20.03.2024
+- Added configuration file
+- Added info, error and warning messages
+- Added setup wizard for setting MAC Adress
+- Added timer for resetting speed level after pausing for more than 4:30 min. 
+
+
+## Troubleshooting
+
+- I ran into an compatibily issue with my Bluetooth dongle while using dft200-go so I slightly modified it. https://github.com/sanjinso/dft200-go
 
