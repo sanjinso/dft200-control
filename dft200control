@@ -3,16 +3,14 @@
 # Path to dft200-go
 DFT200APP="${DFT200_APP_PATH:-$HOME/go/bin/dft-cli}"
 
+# Path for file saving state of treadmill 
+DFT200TMP="${DFT200_TEMP_PATH:-/tmp/dft200.tmp}"
+DFT200CFG="${DFT200_CONFIG_PATH:-$HOME/.config/dft200/dft200_settings.env}"
+DFT200LOG="${DFT200_LOG_PATH:-$HOME/.config/dft200/dft200_events.log}"
+
 # Path to icons for notifications
 iDIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")/icons")
 #iDIR="$HOME/.config/hypr/mako/icons/treadmill"
-
-# Path for file saving state of treadmill 
-DFT200TMP="/tmp/dft200.tmp"
-DFT200CFG="${DFT200_CONFIG_PATH:-$HOME/.config/dft200/dft200_settings.env}"
-DFT200LOG="${DFT200_LOGG_PATH:-$HOME/.config/dft200/dft200_events.log}"
-
-#!/bin/bash
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
