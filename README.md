@@ -12,7 +12,7 @@ You could do this using dft200-go on its own and without this script but this gi
 - Bluetooth control is unauthenticated. Anyone in range can control your treadmill.
 - Be careful when using speed increase or speed decrease after shutting it off on a higher speedlevel, it might ramp up back to that level first even if you intend to slow it down!
 
-## Featuers
+## Features
 - Setup wizard
 - Increase and decrease speed level incrementally
 - Status notifications
@@ -39,6 +39,17 @@ You could do this using dft200-go on its own and without this script but this gi
 | ```dft200control --help```| Lists cmds |
 
 ## Configuration
+
+Default location:
+
+You can change the locations of the settings and log files by setting an PATH via export:
+
+| Variable | Description | Default Path |
+|-------------------------------|--------------------------|
+| ```DFT200CFG``` | Configuration  |  ```~/.config/dft200/dft200_settings.env``` |
+| ```DFT200LOG``` | Usage Log | ```~/.config/dft200/dft200_events.log``` |
+| ```DFT200TMP``` | Cache | ```/tmp/dft200.tmp``` |
+
 
 ### Keyboard Controls
 
@@ -80,11 +91,11 @@ bindsym $mod+Ctrl+3 exec $tmCTL --dec
 - Bluetooth Connection to DFT200
 - [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk)
 
-## Planned
+## Planned Features
 
 - Custom Icons for notifications
-- I also have an DFT100 and might add compatibility to more treadmills.
-- A Dashboard application to visualize the usage data of your treadmill.
+- Adding compatibility for more treadmills (I also have an DFT100)
+- A Dashboard application to visualize the usage data of your treadmill
 
 ## Changelog
 
@@ -92,8 +103,8 @@ bindsym $mod+Ctrl+3 exec $tmCTL --dec
 - Changed logic for caching data and config
 - Added usage tracker logfile generator 
 - Expanded config structure
-- Made controller more robust by setting max ind min speed levels
-- Added sleep timer for speed levels
+- Made controller more robust by setting max and min speed levels
+- Added configurable sleep timer for speed levels
 
 
 20.03.2024 - v0.9
