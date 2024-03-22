@@ -4,12 +4,13 @@
 DFT200APP="${DFT200_APP_PATH:-$HOME/go/bin/dft-cli}"
 
 # Path to icons for notifications
-iDIR="$(dirname "${BASH_SOURCE[0]}")/icons"
+iDIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")/icons")
 #iDIR="$HOME/.config/hypr/mako/icons/treadmill"
 
 # Path for file saving state of treadmill 
-DFT200TMP="/tmp/dft200"
+DFT200TMP="/tmp/dft200.tmp"
 DFT200CFG="${DFT200_CONFIG_PATH:-$HOME/.config/dft200/dft200_settings.env}"
+DFT200LOG="${DFT200_LOGG_PATH:-$HOME/.config/dft200/dft200_events.log}"
 
 #!/bin/bash
 
@@ -19,7 +20,6 @@ YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-SLEEP_TIMEOUT=270
 
 initialize() {
 		echo "Initialization started..."
@@ -43,116 +43,239 @@ initialize() {
         fi
         echo "Selected device MAC: $selected_device"
         # Save the selected MAC to the config file
-        echo "DFT200MAC=$selected_device" >> "$HOME/.config/dft200/dft200_settings.env"
+        echo "DFT200MAC=$selected_device" >> "$DFT200CFG"
     else
         echo "bluetoothctl not found. Please enter your device's MAC address:"
         read -r mac_address
-        echo "DFT200MAC=$mac_address" >> "$HOME/.config/dft200/dft200_settings.env"
+        echo "DFT200MAC=$mac_address" >> "$DFT200CFG"
     fi
+    echo "Activate Notifications? Y/n"
+    read -r notificatins
+		if [ "$notifications" = "n" ] || [ "$notifications" = "N" ] || [ "$notifications" = "no" ]; then
+    	echo "NOTIFICATIONS=FALSE" >> "$DFT200CFG"
+		else
+  		echo "NOTIFICATIONS=TRUE" >> "$DFT200CFG"
+		fi
+    echo "Logging your treadmill activities? y/N"
+    read -r logging
+		if [ "$logging" = "y" ] || [ "$logging" = "Y" ] || [ "$logging" = "yes" ]; then
+    	echo "LOGS=TRUE" >> "$DFT200CFG"
+		else
+  		echo "LOGS=FALSE" >> "$DFT200CFG"
+		fi
     echo -e "${GREEN}Initialization completed.${NC}"
 		echo -e "${BLUE}Try dft200control --toggle${NC}"
 		exit 0
 }
 
+if [ ! -f $DFT200TMP ]; then
+	touch "$DFT200TMP"
+	echo "CURRENT_STATE=OFF" > "$DFT200TMP"
+	echo "CURRENT_SPEED=10" >> "$DFT200TMP"
+	echo "LAST_PAUSED_TIMESTAMP=0" >> "$DFT200TMP"
+fi	
 
 if [ -f $DFT200CFG ]; then
-		echo -e "${GREEN}Config loaded.${NC}"
-	else
-		echo -e "${YELLOW}Config does not exist.${NC}"
-		mkdir -p "$HOME/.config/dft200/" && touch "$HOME/.config/dft200/dft200_settings.env"
-		echo "CURRENT_STATE=OFF" > "$HOME/.config/dft200/dft200_settings.env"
-		echo "CURRENT_SPEED=0" >> "$HOME/.config/dft200/dft200_settings.env"
-		echo "LAST_PAUSED_TIMESTAMP=0" >> "$HOME/.config/dft200/dft200_settings.env"
-		echo "SLEEP_TIMEOUT=270" >> "$HOME/.config/dft200/dft200_settings.env"
-		echo -e "${GREEN}Config created in ~/.config/dft200/${NC}"
-		echo "Starting initialization..."
-		initialize
+	echo -e "${GREEN}Config loaded.${NC}"
+else
+	echo -e "${YELLOW}Config does not exist.${NC}"
+	mkdir -p "$(dirname "$DFT200CFG")" && touch "$DFT200CFG"
+	echo "SLEEP_TIMEOUT=270" >> "$DFT200CFG"
+	echo "MAX_SPD=80" >> "$DFT200CFG"
+	echo "MIN_SPD=10" >> "$DFT200CFG"
+	echo "STEP_SPD=10" >> "$DFT200CFG"
+	echo -e "${GREEN}Config created in $DFT200CFG ${NC}"
+	echo "Starting initialization..."
+	initialize
 fi
 
+load_cache() {
+	while IFS='=' read -r key value; do
+	    case "$key" in
+	        CURRENT_SPEED) CURRENT_SPEED="$value" ;;
+	        CURRENT_STATE) CURRENT_STATE="$value" ;;
+	        LAST_PAUSED_TIMESTAMP) LAST_PAUSED_TIMESTAMP="$value" ;;
+		  esac
+	done < "$DFT200TMP"
+}
+
+update_cache() {
+  local key="$1"
+  local value="$2"
+  # Replace the value for the given key or add it if it doesn't exist
+  if grep -q "^${key}=" $DFT200TMP; then
+      sed -i "s/^${key}=.*/${key}=${value}/" $DFT200TMP
+  else
+      echo -e "${key}=${value}" >> $DFT200TMP
+  fi
+}
+
 load_settings() {
-    while IFS='=' read -r key value; do
-        case "$key" in
-            CURRENT_SPEED) CURRENT_SPEED="$value" ;;
-            CURRENT_STATE) CURRENT_STATE="$value" ;;
-            DFT200MAC) DFT200MAC="$value" ;;
-            LAST_PAUSED_TIMESTAMP) LAST_PAUSED_TIMESTAMP="$value" ;;
-			  esac
-    done < $DFT200CFG
+  while IFS='=' read -r key value; do
+      case "$key" in
+          DFT200MAC) DFT200MAC="$value" ;;
+					LOGS) LOGS="$value" ;;
+					NOTIFICATIONS) NOTIFICATIONS="$value" ;;
+					SLEEP_TIMEOUT) SLEEP_TIMEOUT="$value" ;;
+					MAX_SPD) MAX_SPD="$value" ;;
+					MIN_SPD) MIN_SPD="$value" ;;
+		 			STEP_SPD) STEP_SPD="$value" ;;
+		  esac
+  done < $DFT200CFG
 }
 
 load_setting() {
-    local setting_name="$1"
-    local setting_value
-    
-    # Attempt to read the setting's value from the file
-    setting_value=$(grep "^${setting_name}=" "$HOME/.config/dft200/dft200_settings.env" | cut -d '=' -f2-)
+  local setting_name="$1"
+  local setting_value
+  
+  # Attempt to read the setting's value from the file
+  setting_value=$(grep "^${setting_name}=" "$DFT200CFG" | cut -d '=' -f2-)
 
-    # Check if the setting was found and update the corresponding variable
-    if [ -n "$setting_value" ]; then
-        eval "$setting_name='$setting_value'"
-    else
-        echo -e "${YELLOW}Warning: Setting '$setting_name' not found.${NC}"
-    fi
+  # Check if the setting was found and update the corresponding variable
+  if [ -n "$setting_value" ]; then
+      eval "$setting_name='$setting_value'"
+  else
+      echo -e "${YELLOW}Warning: Setting '$setting_name' not found.${NC}"
+  fi
 }
 
 update_setting() {
-    local key="$1"
-    local value="$2"
-    # Replace the value for the given key or add it if it doesn't exist
-    if grep -q "^${key}=" $DFT200CFG; then
-        sed -i "s/^${key}=.*/${key}=${value}/" $DFT200CFG
-    else
-        echo -e "${key}=${value}" >> $DFT200CFG
-    fi
+  local key="$1"
+  local value="$2"
+  # Replace the value for the given key or add it if it doesn't exist
+  if grep -q "^${key}=" $DFT200CFG; then
+		sed -i "s/^${key}=.*/${key}=${value}/" $DFT200CFG
+	else
+		echo -e "${key}=${value}" >> $DFT200CFG
+	fi
 }
 
 toggle() {
 	load_settings
+	load_cache
 	current_time=$(date +%s)
 	if [ "$CURRENT_STATE" = "ON" ]; then
 	  if ! $DFT200APP -addr "$DFT200MAC" -pause; then
     	echo -e "${RED}Error: Failed to pause the treadmill.${NC}"
 			return 1
     fi
-		CURRENT_STATE=OFF
-		update_setting CURRENT_STATE "$CURRENT_STATE"
-		update_setting LAST_PAUSED_TIMESTAMP "$current_time"
-	else
-		time_diff=$((current_time - LAST_PAUSED_TIMESTAMP))
-		if [ "$time_diff" -ge "$SLEEP_TIMEOUT" ]; then
-			echo -e "${BLUE}Resetting treadmill speed to level 1 due to inactivity${NC}"
-			update_setting CURRENT_SPEED "10" 
+		CURRENT_STATE="OFF"
+		if [ "$LOGS" = "TRUE" ]; then
+			log_event "0"
 		fi
+		LAST_PAUSED_TIMESTAMP="$current_time"
+	elif [ "$CURRENT_STATE" = "SLEEP" ]; then
 		if ! $DFT200APP -addr "$DFT200MAC" -start; then
 		  echo -e "${RED}Error: Failed to start the treadmill.${NC}"
 		  return 1
+		else
+			CURRENT_STATE="ON"
+			if [ "$LOGS" = "TRUE" ]; then
+				log_event "$CURRENT_SPEED"
+			fi
 		fi
-		CURRENT_STATE=ON 
+	elif [ "$CURRENT_STATE" = "OFF" ]; then
+		time_diff=$((current_time - $LAST_PAUSED_TIMESTAMP))
+		if [ "$time_diff" -ge "$SLEEP_TIMEOUT" ]; then
+			echo -e "${BLUE}Resetting treadmill speed to level 1 due to inactivity${NC}"
+			update_cache CURRENT_SPEED "$MIN_SPD"
+			if ! $DFT200APP -addr "$DFT200MAC" -start; then
+			  echo -e "${RED}Error: Failed to start the treadmill.${NC}"
+			  return 1
+			else
+				CURRENT_STATE="SLEEP"
+			fi
+		else
+			if ! $DFT200APP -addr "$DFT200MAC" -start; then
+			  echo -e "${RED}Error: Failed to start the treadmill.${NC}"
+			  return 1
+			else
+				CURRENT_STATE="ON"
+				if [ "$LOGS" = "TRUE" ]; then
+					log_event "$CURRENT_SPEED"
+				fi
+			fi
+		fi
 	fi
-	update_setting CURRENT_STATE "$CURRENT_STATE"
-	get_icon_state && notify_user_state
+	if [ $NOTIFICATIONS = "TRUE" ]; then
+		get_icon_state && notify_user_state "$CURRENT_STATE"
+	fi
+	update_cache CURRENT_STATE "$CURRENT_STATE"
+	update_cache LAST_PAUSED_TIMESTAMP "$LAST_PAUSED_TIMESTAMP"
 }
 
 inc_speed() {
 	load_settings
-	CURRENT_SPEED=$((CURRENT_SPEED + 10))
-	echo "Current Speed: $CURRENT_SPEED at $DFT200MAC"
-	$DFT200APP -addr $DFT200MAC -speed $CURRENT_SPEED	
-	update_setting CURRENT_SPEED "$CURRENT_SPEED"
-	get_icon_speed && notify_user_speed
+	load_cache
+	if [ "$CURRENT_SPEED" -lt "$MAX_SPD" ]; then
+		CURRENT_SPEED=$((CURRENT_SPEED + $STEP_SPD))
+		# echo "Current Speed: $CURRENT_SPEED at $DFT200MAC"
+		$DFT200APP -addr $DFT200MAC -speed $CURRENT_SPEED	
+		update_cache CURRENT_SPEED "$CURRENT_SPEED"
+		if [ "$LOGS" = "TRUE" ]; then
+			log_event "$CURRENT_SPEED"
+		fi
+	fi
+	if [ $NOTIFICATIONS = "TRUE" ]; then
+		get_icon_speed && notify_user_speed $CURRENT_SPEED
+	fi
 }
 
 dec_speed() {
 	load_settings
-	CURRENT_SPEED=$((CURRENT_SPEED - 10))
-	$DFT200APP -addr $DFT200MAC -speed $CURRENT_SPEED	
-	update_setting CURRENT_SPEED "$CURRENT_SPEED"
-	get_icon_speed && notify_user_speed 
+	load_cache
+	if [ "$CURRENT_SPEED" -gt "$MIN_SPD" ]; then
+		CURRENT_SPEED=$((CURRENT_SPEED - $STEP_SPD))
+		$DFT200APP -addr $DFT200MAC -speed $CURRENT_SPEED	
+		update_cache CURRENT_SPEED "$CURRENT_SPEED"
+		if [ "$LOGS" = "TRUE" ]; then
+			log_event "$CURRENT_SPEED"
+		fi
+	fi
+	if [ $NOTIFICATIONS = "TRUE" ]; then
+		get_icon_speed && notify_user_speed $CURRENT_SPEED
+	fi
+}
+
+log_event () {
+	if [ ! -f $DFT200LOG ]; then
+		touch "$DFT200LOG"
+		echo "timestamp,speed" >> "$DFT200LOG"
+	fi
+	current_time=$(date +%s)
+	#JSON
+	# echo "{\"time\": $current_time, \"cmd\": \"$1\", \"spd\": $2}" >> "$DFT200LOG"
+	echo "$current_time,$1" >> "$DFT200LOG"
 }
 
 get_speed() {
-  load_setting CURRENT_SPEED
-	echo $CURRENT_SPEED
+  load_cache CURRENT_SPEED
+	echo "$CURRENT_SPEED"
+}
+
+notify_toggle() {
+	load_setting NOTIFICATIONS
+	if [ "$NOTIFICATIONS" = "TRUE" ]; then
+		update_setting NOTIFICATIONS "FALSE"
+		echo -e "${RED}Notifications deactivated${NC}"
+	else
+		update_setting NOTIFICATIONS "TRUE"
+		echo -e "${GREEN}Notifications activated${NC}"
+	fi
+}
+
+print_status() {
+	load_settings
+	load_cache
+	echo "Status:"
+	echo "CURRENT_STATE: $CURRENT_STATE"
+	echo "CURRENT_SPEED: $CURRENT_SPEED"
+	echo "LAST_PAUSED_TIMESTAMP: $LAST_PAUSED_TIMESTAMP"
+	echo " "
+	echo "Configuration:"
+	echo "DFT200MAC: $DFT200MAC"
+	echo "LOGS: $LOGS"
+	echo "NOTIFICATIONS: $NOTIFICATIONS"
 }
 
 get_icon_speed() {
@@ -178,13 +301,11 @@ get_icon_state() {
 }
 
 notify_user_speed() {
-	load_setting CURRENT_SPEED
-	notify-send -h string:x-canonical-private-synchronous:sys-notify -u low -i "$icon" "Speed Level: $((CURRENT_SPEED / 10))"
+	notify-send -h string:x-canonical-private-synchronous:sys-notify -u low -i "$icon" "Speed Level: $(($1 / 10))"
 }
 
 notify_user_state() {
-	load_setting CURRENT_STATE
-	notify-send -h string:x-canonical-private-synchronous:sys-notify -u low -i "$icon" "Powered: $CURRENT_STATE"
+	notify-send -h string:x-canonical-private-synchronous:sys-notify -u low -i "$icon" "Powered: $1"
 }
 
 case "$1" in
@@ -203,12 +324,20 @@ case "$1" in
 	"--toggle")
 		toggle
 		;;
+	"--notify")
+		notify_toggle
+		;;
+	"--status")
+		print_status
+		;;
 	"--help")
 		echo "Use 'dft200control' --argument"
 		echo "--init | Setup configuration"
 		echo "--toggle | Toggle treadmill On/Off"
 		echo "--inc | Increase speed"
 		echo "--dec | Decrease speed"
+		echo "--notify | Toggle notifications"
+		echo "--status | Print treadmill status"
 		;;
 	*)
 	  echo -e "${YELLOW}No valid argument provided. Run 'dft200control --init' if its your first time or try --help${NC}"

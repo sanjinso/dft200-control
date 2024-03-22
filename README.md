@@ -1,7 +1,7 @@
 # dft200-control
-Just a simple Bash script I wrote for controlling an DFT200 by Sportstech via CLI or keyboard using [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk). 
+Just a fun project for controlling an DFT200 by Sportstech via CLI or keyboard using [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk). 
 
-You could do this using dft200-go on its own and without this script but this gives you notifications about the state of the treadmill and makes it possible to increase or decrease the speed incremantally by repeatedly pressing a button.
+You could do this using dft200-go on its own and without this script but this gives you notifications about the state of the treadmill and makes it possible to increase or decrease the speed incremantally by repeatedly pressing a button. And adds some more useful functions.
 
 *I use it with Hyprland and Mako Notifications on Arch Linux.*
 
@@ -11,6 +11,12 @@ You could do this using dft200-go on its own and without this script but this gi
 - Emergency stop is NOT implemented.
 - Bluetooth control is unauthenticated. Anyone in range can control your treadmill.
 - Be careful when using speed increase or speed decrease after shutting it off on a higher speedlevel, it might ramp up back to that level first even if you intend to slow it down!
+
+## Featuers
+- Setup wizard
+- Increase and decrease speed level incrementally
+- Status notifications
+- Generates log files for tracking treadmill usage
 
 ## Setup
 1. Install dft200-go: ```go install github.com/leoluk/dft200-go/cmd/dft-cli```
@@ -24,10 +30,12 @@ You could do this using dft200-go on its own and without this script but this gi
 | Command | Description |
 |-------------------------------|--------------------------|
 | ```dft200control --init``` | Setup |
-| ```dft200control --toggle``` | On/Off |
+| ```dft200control --toggle``` | Treadmill on/off |
 | ```dft200control --inc``` | Increase speed |
 | ```dft200control --dec``` | Decrease speed |
 | ```dft200control --get``` | Return current speed |
+| ```dft200control --notify``` | Toggles notifications on/off |
+| ```dft200control --status``` | Prints treadmill status |
 | ```dft200control --help```| Lists cmds |
 
 ## Configuration
@@ -69,11 +77,24 @@ bindsym $mod+Ctrl+3 exec $tmCTL --dec
 | 8 | 7.1 |
 
 ## Requirements
--  Bluetooth Connection to DFT200
--  [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk)
+- Bluetooth Connection to DFT200
+- [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk)
 
+## Planned
+
+- Custom Icons for notifications
+- I also have an DFT100 and might add compatibility to more treadmills.
+- A Dashboard application to visualize the usage data of your treadmill.
 
 ## Changelog
+
+22.03.2024 - v1.0
+- Changed logic for caching data and config
+- Added usage tracker logfile generator 
+- Expanded config structure
+- Made controller more robust by setting max ind min speed levels
+- Added sleep timer for speed levels
+
 
 20.03.2024 - v0.9
 - Added configuration file
