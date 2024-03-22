@@ -40,12 +40,10 @@ You could do this using dft200-go on its own and without this script but this gi
 
 ## Configuration
 
-Default location:
-
 You can change the locations of the settings and log files by setting an PATH via export:
 
 | Variable | Description | Default Path |
-|-------------------------------|--------------------------|
+|-----------------|----------------|-------------------------------------------|
 | ```DFT200CFG``` | Configuration  |  ```~/.config/dft200/dft200_settings.env``` |
 | ```DFT200LOG``` | Usage Log | ```~/.config/dft200/dft200_events.log``` |
 | ```DFT200TMP``` | Cache | ```/tmp/dft200.tmp``` |
