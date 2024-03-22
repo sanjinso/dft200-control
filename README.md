@@ -47,7 +47,7 @@ You can change the locations of the settings and log files by setting an PATH vi
 | ```DFT200CFG``` | Configuration  |  ```~/.config/dft200/dft200_settings.env``` |
 | ```DFT200LOG``` | Usage Log | ```~/.config/dft200/dft200_events.log``` |
 | ```DFT200TMP``` | Cache | ```/tmp/dft200.tmp``` |
-
+| ```DFT200APP``` | dft200-go | ```~/go/bin/dft-cli``` |
 
 ### Keyboard Controls
 
