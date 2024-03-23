@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 
+#Todo
+#Improve logging by not sending on command when pause was send
+#The higher speed the more time will shut on be ignored 
+
 # Path to dft200-go
 DFT200APP="${DFT200_APP_PATH:-$HOME/go/bin/dft-cli}"
-
-# Path for file saving state of treadmill 
 DFT200TMP="${DFT200_TEMP_PATH:-/tmp/dft200.tmp}"
-DFT200CFG="${DFT200_CONFIG_PATH:-$HOME/.config/dft200/dft200_settings.env}"
-DFT200LOG="${DFT200_LOG_PATH:-$HOME/.config/dft200/dft200_events.log}"
+DFT200CFGDIR="${DFT200_CONFIG_DIR:-$HOME/.config/dft200}"
+DFT200CFG="$DFT200CFGDIR/dft200_settings.env"
+DFT200STATS="$DFT200CFGDIR/dft200_stats.env"
+DFT200LOG="$DFT200CFGDIR/logs/dft200_events.log"
 iDIR=$(realpath "$(dirname "${DFT200CFG}")/icons")
 
 RED='\033[0;31m'
@@ -67,6 +71,7 @@ if [ ! -f $DFT200TMP ]; then
 	echo "CURRENT_STATE=OFF" > "$DFT200TMP"
 	echo "CURRENT_SPEED=10" >> "$DFT200TMP"
 	echo "LAST_PAUSED_TIMESTAMP=0" >> "$DFT200TMP"
+	echo "LAST_STARTED_TIMESTAMP=0" >> "$DFT200TMP"
 fi	
 
 if [ -f $DFT200CFG ]; then
@@ -76,6 +81,7 @@ else
 	mkdir -p "$(dirname "$DFT200CFG")" && touch "$DFT200CFG"
 	echo "SLEEP_TIMER=TRUE" >> "$DFT200CFG"
 	echo "SLEEP_TIMEOUT=270" >> "$DFT200CFG"
+	echo "SLOWDOWN_TIMER=TRUE" >> "$DFT200CFG"
 	echo "MAX_SPD=80" >> "$DFT200CFG"
 	echo "MIN_SPD=10" >> "$DFT200CFG"
 	echo "STEP_SPD=10" >> "$DFT200CFG"
@@ -90,7 +96,8 @@ load_cache() {
 	        CURRENT_SPEED) CURRENT_SPEED="$value" ;;
 	        CURRENT_STATE) CURRENT_STATE="$value" ;;
 	        LAST_PAUSED_TIMESTAMP) LAST_PAUSED_TIMESTAMP="$value" ;;
-		  esac
+		  		LAST_STARTED_TIMESTAMP) LAST_STARTED_TIMESTAMP="$value" ;;
+			esac
 	done < "$DFT200TMP"
 }
 
@@ -113,6 +120,7 @@ load_settings() {
 					NOTIFICATIONS) NOTIFICATIONS="$value" ;;
 					SLEEP_TIMER) SLEEP_TIMER="$value" ;;
 					SLEEP_TIMEOUT) SLEEP_TIMEOUT="$value" ;;
+					SLOWDOWN_TIMER) SLOWDOWN_TIMER="$value" ;;
 					MAX_SPD) MAX_SPD="$value" ;;
 					MIN_SPD) MIN_SPD="$value" ;;
 		 			STEP_SPD) STEP_SPD="$value" ;;
@@ -146,6 +154,23 @@ update_setting() {
 	fi
 }
 
+slowdown_timer() {
+	speed=$1
+  case "$1" in
+      10) sleep="5" ;;
+			20) sleep="7" ;;
+			30) sleep="10" ;;
+			40) sleep="13" ;;
+			50) sleep="15" ;;
+			60) sleep="18" ;;
+			70) sleep="20" ;;
+			80) sleep="23" ;;
+			*) sleep="1" ;;
+	esac
+	echo "$sleep"
+}
+
+
 toggle() {
 	load_settings
 	load_cache
@@ -156,22 +181,39 @@ toggle() {
 			return 1
     fi
 		CURRENT_STATE="OFF"
+		LAST_PAUSED_TIMESTAMP="$current_time"
 		if [ "$LOGS" ]; then
 			log_event "0"
 		fi
-		LAST_PAUSED_TIMESTAMP="$current_time"
 	elif [ "$CURRENT_STATE" = "SLEEP" ]; then
 		if ! $DFT200APP -addr "$DFT200MAC" -start; then
 		  echo -e "${RED}Error: Failed to start the treadmill.${NC}"
 		  return 1
 		else
 			CURRENT_STATE="ON"
+			LAST_STARTED_TIMESTAMP="$current_time"
 			if [ "$LOGS" = "TRUE" ]; then
 				log_event "$CURRENT_SPEED"
 			fi
 		fi
 	elif [ "$CURRENT_STATE" = "OFF" ]; then
 		time_diff=$((current_time - $LAST_PAUSED_TIMESTAMP))
+		ramp_up_timer=$(($LAST_PAUSED_TIMESTAMP - $LAST_STARTED_TIMESTAMP))
+		slowdown_timer=$(slowdown_timer $CURRENT_SPEED)
+
+		# echo "Speed Setting: $CURRENT_SPEED"
+	  # echo "Ramp up was: $ramp_up_timer s ago"
+		# echo "Last Shutdown was: $time_diff s ago"
+		# echo "Slowdowntimer: $slowdown_timer s"
+	
+		if [ "$SLOWDOWN_TIMER" ]; then
+			if [ $time_diff -lt $slowdown_timer ] && [ ! $ramp_up_timer -lt $time_diff ]; then
+			    echo -e "${BLUE}SlowdownTimer: $((time_diff - slowdown_timer)) ${NC}"
+			    exit
+			fi
+		fi
+
+
 		if [ "$time_diff" -ge "$SLEEP_TIMEOUT" ]; then
 			echo -e "${BLUE}Resetting treadmill speed to level 1 due to inactivity${NC}"
 			update_cache CURRENT_SPEED "$MIN_SPD"
@@ -181,16 +223,19 @@ toggle() {
 			else
 				if [ "$SLEEP_TIMER" ]; then
 					CURRENT_STATE="SLEEP"
+					CURRENT_STATE="ON"
 				else
 					CURRENT_STATE="ON"
+					LAST_STARTED_TIMESTAMP="$current_time"
 				fi
 			fi
 		else
 			if ! $DFT200APP -addr "$DFT200MAC" -start; then
 			  echo -e "${RED}Error: Failed to start the treadmill.${NC}"
 			  return 1
-			else
+			else			
 				CURRENT_STATE="ON"
+				LAST_STARTED_TIMESTAMP="$current_time"
 				if [ "$LOGS" = "TRUE" ]; then
 					log_event "$CURRENT_SPEED"
 				fi
@@ -202,6 +247,7 @@ toggle() {
 	fi
 	update_cache CURRENT_STATE "$CURRENT_STATE"
 	update_cache LAST_PAUSED_TIMESTAMP "$LAST_PAUSED_TIMESTAMP"
+	update_cache LAST_STARTED_TIMESTAMP "$LAST_STARTED_TIMESTAMP"
 }
 
 inc_speed() {
@@ -276,6 +322,8 @@ print_status() {
 	echo "DFT200MAC: $DFT200MAC"
 	echo "LOGS: $LOGS"
 	echo "NOTIFICATIONS: $NOTIFICATIONS"
+	echo "SLOWDOWN_TIMER: $SLOWDOWN_TIMER"
+	echo "SLEEP_TIMER: $SLEEP_TIMER"
 }
 
 get_icon_speed() {
