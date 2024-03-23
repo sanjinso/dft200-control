@@ -222,7 +222,7 @@ toggle() {
 			  return 1
 			else
 				if [ "$SLEEP_TIMER" ]; then
-					CURRENT_STATE="SLEEP"
+					# CURRENT_STATE="SLEEP"
 					CURRENT_STATE="ON"
 				else
 					CURRENT_STATE="ON"
