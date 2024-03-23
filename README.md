@@ -23,7 +23,7 @@ You could do this using dft200-go on its own and without this script but this gi
 2. Clone this repo: ```git clone https://github.com/sanjinso/dft200-control.git ~/.local/bin/dft200control```
 3. Make it executable: ```chmod +x ~/.local/bin/dft200control/dft200control```
 4. **Optional**: Set filepath to dft200-go via ```export DFT200_APP_PATH```. Default is: ```$HOME/go/bin/dft-cli```
-5. Make sure your Bluetooth works. Checkout [dft200-go/readme.md](https://github.com/leoluk/dft200-go)
+5. Make sure your Bluetooth works. Check out [dft200-go/readme.md](https://github.com/leoluk/dft200-go)
 6. Run ```dft200control```
 
 ## Usage
