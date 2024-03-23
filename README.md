@@ -1,5 +1,5 @@
 # dft200-control
-Just a fun project for controlling an DFT200 by Sportstech via CLI or keyboard using [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk). 
+Just a bash script for controlling an DFT200 by Sportstech via CLI or keyboard using [dft200-go](https://github.com/leoluk/dft200-go) by [leoluk](https://github.com/leoluk). 
 
 You could do this using dft200-go on its own and without this script but this gives you notifications about the state of the treadmill and makes it possible to increase or decrease the speed incremantally by repeatedly pressing a button. And adds some more useful functions.
 
@@ -38,13 +38,17 @@ You could do this using dft200-go on its own and without this script but this gi
 | ```dft200control --status``` | Prints treadmill status |
 | ```dft200control --help```| Lists cmds |
 
+### Tracking
+If you want accurate tracking dont use the original remote control, its commands are not logged.
+
+
 ## Configuration
 
 You can change the locations of the settings and log files by setting an PATH via export:
 
 | Variable | Description | Default Path |
 |-----------------|----------------|-------------------------------------------|
-| ```DFT200_CONFIG_PATH``` | Configuration  |  ```~/.config/dft200/dft200_settings.env``` |
+| ```DFT200_CONFIG_DIR``` | Configuration  |  ```~/.config/dft200``` |
 | ```DFT200_LOG_PATH``` | Usage Log | ```~/.config/dft200/dft200_events.log```| 
 | ```DFT200_APP_PATH``` | dft200-go | ```~/go/bin/dft-cli``` |
 
@@ -96,13 +100,16 @@ bindsym $mod+Ctrl+3 exec $tmCTL --dec
 
 ## Changelog
 
+23.03.2024 - v.1.1
+- Added Ramp Up & Slowdown Timer to make sure treadmill is ready for commands
+- Improved tracking reliability
+
 22.03.2024 - v1.0
 - Changed logic for caching data and config
 - Added usage tracker logfile generator 
 - Expanded config structure
 - Made controller more robust by setting max and min speed levels
 - Added configurable sleep timer for speed levels
-
 
 20.03.2024 - v0.9
 - Added configuration file
