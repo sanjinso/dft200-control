@@ -5,7 +5,8 @@
 #The higher speed the more time will shut on be ignored 
 
 # Path to dft200-go
-DFT200APP="${DFT200_APP_PATH:-$HOME/go/bin/dft-cli}"
+DFT200APP="$HOME/go/bin/dft-cli"
+DFT200APP="$GOPATH/bin/dft-cli"
 DFT200TMP="${DFT200_TEMP_PATH:-/tmp/dft200.tmp}"
 DFT200CFGDIR="${DFT200_CONFIG_DIR:-$HOME/.config/dft200}"
 DFT200CFG="$DFT200CFGDIR/dft200_settings.env"
